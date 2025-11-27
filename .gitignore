@@ -1,2 +1,15 @@
-config.json
+# 環境變數
 token.env
+
+# 頻道 ID
+config.json
+
+# Python 暫存檔
+__pycache__/
+*.pyc
+
+# IDE/OS 雜項
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
