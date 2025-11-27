@@ -68,7 +68,11 @@ async def on_message(message: discord.Message):
         # 發送通知
         notify_channel = guild.get_channel(config['INFO_CHANNEL'])
         if notify_channel:
-            formatted_msg = config['info_msg'].replace('<user_id>', f'<@{target.id}>').replace('<NO_MSG_CHANNEL>', f'<#{config['NO_MSG_CHANNEL']}>')
+            formatted_msg = (
+                config['info_msg']
+                .replace('<user_id>', f'<@{target.id}>')
+                .replace('<NO_MSG_CHANNEL>', f'<#{config["NO_MSG_CHANNEL"]}>')
+            )
             await notify_channel.send(formatted_msg)
 
     await bot.process_commands(message)
