@@ -13,11 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent
 # 讀取 config.json
 CONFIG_PATH = BASE_DIR / 'config.json'
 with CONFIG_PATH.open('r', encoding='utf-8') as f:
-    config = json.load(f)
-
-INFO_CHANNEL_ID = config['INFO_CHANNEL']
-NO_MSG_CHANNEL_ID = config['NO_MSG_CHANNEL']
-INFO_MESSAGE_TEMPLATE = config['info_msg']
+    config: int | str = json.load(f)
 
 # 讀取 token.env
 load_dotenv(dotenv_path=BASE_DIR / 'token.env')
@@ -38,7 +34,7 @@ async def on_message(message: discord.Message):
     if message.author.bot:
         return
 
-    if message.channel.id == NO_MSG_CHANNEL_ID:
+    if message.channel.id == config['NO_MSG_CHANNEL']:
         guild = message.guild
         target = message.author
 
@@ -70,9 +66,9 @@ async def on_message(message: discord.Message):
             print('Discord API 錯誤')
 
         # 發送通知
-        notify_channel = guild.get_channel(INFO_CHANNEL_ID)
+        notify_channel = guild.get_channel(config['INFO_CHANNEL'])
         if notify_channel:
-            formatted_msg = INFO_MESSAGE_TEMPLATE.format(user=target, NO_MSG_CHANNEL=NO_MSG_CHANNEL_ID)
+            formatted_msg = config['info_msg'].replace('<user_id>', f'<@{target.id}>').replace('<NO_MSG_CHANNEL>', f'<#{config['NO_MSG_CHANNEL']}>')
             await notify_channel.send(formatted_msg)
 
     await bot.process_commands(message)
