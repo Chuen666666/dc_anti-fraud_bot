@@ -78,4 +78,5 @@ async def on_message(message: discord.Message):
     await bot.process_commands(message)
 
 # 啟動 bot
-bot.run(TOKEN)
+if __name__ == '__main__':
+    bot.run(TOKEN)
