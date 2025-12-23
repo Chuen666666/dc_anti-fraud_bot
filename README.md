@@ -17,4 +17,9 @@ pip install -r requirements.txt
 |`token.example.env`|`token.env`|將 Discord Bot 的 Token 放入|
 > 以上兩個檔案皆屬於敏感資訊，請勿上傳至公開的 GitHub
 
-> 另外，若使用 Render 來線上跑 Discord Bot，請在 Render &rarr; Service &rarr; Environment Variables 新增 `DISCORD_BOT_TOKEN = <填入你的 BOT TOKEN>`
+> 另外，若使用 Render 來線上跑 Discord Bot，請在 Render &rarr; Service &rarr; Environment Variables 新增 `TOKEN = <填入你的 BOT TOKEN>`
+## 啟動機器人
+在 Venv 啟動的狀態下，執行以下指令（或以其他方式開啟 `main.py`）
+```bash
+python main.py
+```
