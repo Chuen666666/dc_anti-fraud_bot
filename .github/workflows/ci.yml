@@ -1,0 +1,41 @@
+name: Python CI for Discord Bot
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  run-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 使用 Secret 生出 .env
+      - name: Create .env from SECRET
+        run: |
+          echo "TOKEN=${{ secrets.TOKEN }}" > .env
+
+      # 使用 Secret 生出 config.json
+      - name: Create config.json
+        run: |
+          echo '${{ secrets.CONFIG_JSON }}' > config.json
+
+      # 執行你的 main.py 做基本啟動確認
+      - name: Run bot startup check
+        run: |
+          python main.py
