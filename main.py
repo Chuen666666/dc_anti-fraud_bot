@@ -6,6 +6,20 @@ from pathlib import Path
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+from flask import Flask
+from threading import Thread
+
+# 啟動迷你網頁，讓 Render 持續上線
+app = Flask('/')
+@app.route('/')
+def home():
+    return "I'm alive!"
+def run():
+    app.run(host='0.0.0.0', port=8080)
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+keep_alive()
 
 # 定義 BASE_DIR
 BASE_DIR = Path(__file__).resolve().parent
