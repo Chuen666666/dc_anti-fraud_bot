@@ -8,7 +8,7 @@
 
 ## Python 虛擬環境（Venv）與套件
 1. 請先把本專案 clone 下來後，建立一個 Venv
-2. 若有提示要安裝 `requirements.txt` 中的內容，安裝；否則在建立完 Venv 後，使用以下指令安裝
+2. 使用以下指令安裝依賴
 
 ```bash
 pip install -r requirements.txt
