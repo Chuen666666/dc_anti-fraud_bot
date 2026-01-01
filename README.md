@@ -41,7 +41,9 @@ python main.py
    - Build Command: `pip install -r requirements.txt`
    - Start Command: `python main.py`
    - Environment Variables：填入名稱 `TOKEN` 以及具體的 Discord Bot Token 進去
-   - Advanced &rarr; Secret File：`Filename` 填入 `config.json`，`File Contents` 填入該 JSON 檔內容
+   - Advanced
+     - Secret Files：`Filename` 填入 `config.json`、`File Contents` 填入該 JSON 檔內容
+     - Health Check Path: `/`（預設為 `/healthz`）
 4. 最後點擊 `Deploy Web Service`
 5. 可在部署後，到 Setting &rarr; Health Checks &rarr; Health Check Path 改為 `/`（預設應為 `healthz`）
 6. 至 UptimeRobot：創建 HTTP / website monitoring 並填入 Render 中該 Bot 的網址
