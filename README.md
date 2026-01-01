@@ -32,7 +32,7 @@ python main.py
 ```
 
 ## Render 設定
-若機器人跑在 Render 環境，它會自動維持上線狀態，Render 的設定方式如下：
+若機器人跑在 Render 環境，它會自動維持上線狀態，Render 和 UptimeRobot 的設定方式如下：
 
 1. 創建一個 Web Service
 2. 選擇機器人的 GitHub Repo（可先 Fork 此 Repo）
@@ -43,3 +43,5 @@ python main.py
    - Environment Variables：填入名稱 `TOKEN` 以及具體的 Discord Bot Token 進去
    - Advanced &rarr; Secret File：`Filename` 填入 `config.json`，`File Contents` 填入該 JSON 檔內容
 4. 最後點擊 `Deploy Web Service`
+5. 可在部署後，到 Setting &rarr; Health Checks &rarr; Health Check Path 改為 `/`（預設應為 `healthz`）
+6. 至 UptimeRobot：創建 HTTP / website monitoring 並填入 Render 中該 Bot 的網址

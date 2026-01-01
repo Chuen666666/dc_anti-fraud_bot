@@ -10,7 +10,7 @@ from flask import Flask
 from threading import Thread
 
 # 啟動迷你網頁，讓 Render 持續上線
-app = Flask('__name__')
+app = Flask(__name__)
 @app.route('/')
 def home():
     return "I'm alive!"
