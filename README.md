@@ -27,6 +27,7 @@ pip install -r requirements.txt
 
 ## 啟動機器人
 在 Venv 啟動的狀態下，執行以下指令（或以其他方式開啟 `main.py`）
+
 ```bash
 python main.py
 ```
