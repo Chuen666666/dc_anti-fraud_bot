@@ -10,7 +10,7 @@ from flask import Flask
 from threading import Thread
 
 # 啟動迷你網頁，讓 Render 持續上線
-app = Flask('/')
+app = Flask('__name__')
 @app.route('/')
 def home():
     return "I'm alive!"
@@ -30,8 +30,11 @@ with CONFIG_PATH.open('r', encoding='utf-8') as f:
     config: int | str = json.load(f)
 
 # 讀取 token.env
-load_dotenv(dotenv_path=BASE_DIR / 'token.env')
 TOKEN = os.getenv('TOKEN')
+
+if not TOKEN:
+    load_dotenv(dotenv_path=BASE_DIR / 'token.env')
+    TOKEN = os.getenv('TOKEN')
 
 # 設定 intents
 intents = discord.Intents.default()
@@ -93,4 +96,7 @@ async def on_message(message: discord.Message):
 
 # 啟動 bot
 if __name__ == '__main__':
-    bot.run(TOKEN)
+    if TOKEN:
+        bot.run(TOKEN)
+    else:
+        print('錯誤！TOKEN 為空')
