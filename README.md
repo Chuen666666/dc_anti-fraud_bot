@@ -46,5 +46,4 @@ python main.py
      - Secret Files：`Filename` 填入 `config.json`、`File Contents` 填入該 JSON 檔內容
      - Health Check Path: `/`（預設為 `/healthz`）
 4. 最後點擊 `Deploy Web Service`
-5. 可在部署後，到 Setting &rarr; Health Checks &rarr; Health Check Path 改為 `/`（預設應為 `healthz`）
-6. 至 UptimeRobot：創建 HTTP / website monitoring 並填入 Render 中該 Bot 的網址
+5. 至 UptimeRobot：創建 HTTP / website monitoring 並填入 Render 中該 Bot 的網址
