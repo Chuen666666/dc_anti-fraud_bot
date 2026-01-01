@@ -35,9 +35,9 @@ else:
 try:
     with CONFIG_PATH.open('r', encoding='utf-8') as f:
         config = json.load(f)
-    print(f"成功讀取設定檔：{CONFIG_PATH}")
+    print(f'成功讀取設定檔：{CONFIG_PATH}')
 except Exception as e:
-    print(f"讀取設定檔失敗！路徑：{CONFIG_PATH}，錯誤：{e}")
+    print(f'讀取設定檔失敗！路徑：{CONFIG_PATH}，錯誤：{e}')
 
 # 讀取 token.env
 TOKEN = os.getenv('TOKEN')
