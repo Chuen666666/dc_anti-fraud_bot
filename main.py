@@ -25,9 +25,19 @@ keep_alive()
 BASE_DIR = Path(__file__).resolve().parent
 
 # 讀取 config.json
-CONFIG_PATH = BASE_DIR / 'config.json'
-with CONFIG_PATH.open('r', encoding='utf-8') as f:
-    config: int | str = json.load(f)
+if os.path.exists('/etc/secrets/config.json'):
+    CONFIG_PATH = Path('/etc/secrets/config.json')
+elif (BASE_DIR / 'config.json').exists():
+    CONFIG_PATH = BASE_DIR / 'config.json'
+else:
+    CONFIG_PATH = Path('config.json')
+
+try:
+    with CONFIG_PATH.open('r', encoding='utf-8') as f:
+        config = json.load(f)
+    print(f"成功讀取設定檔：{CONFIG_PATH}")
+except Exception as e:
+    print(f"讀取設定檔失敗！路徑：{CONFIG_PATH}，錯誤：{e}")
 
 # 讀取 token.env
 TOKEN = os.getenv('TOKEN')
