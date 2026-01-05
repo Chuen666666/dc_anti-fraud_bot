@@ -20,7 +20,6 @@ def keep_alive():
     t = Thread(target=run)
     t.daemon = True
     t.start()
-keep_alive()
 
 # 定義 BASE_DIR
 BASE_DIR = Path(__file__).resolve().parent
@@ -108,6 +107,7 @@ async def on_message(message: discord.Message):
 # 啟動 bot
 if __name__ == '__main__':
     if TOKEN:
+        keep_alive()
         bot.run(TOKEN)
     else:
         print('錯誤！TOKEN 為空')
