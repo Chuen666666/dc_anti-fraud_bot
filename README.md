@@ -1,4 +1,4 @@
-# 機器人建置與使用教學
+# Discord 防詐防炸機器人
 ## 基礎環境
 - Python（3.10+，建議使用 3.11+）
 - Discord 伺服器（具管理員或擁有者的權限）
@@ -14,16 +14,16 @@
 pip install -r requirements.txt
 ```
 
-## 檔案修改
+## 從範例檔建立必要檔案
 
-|原檔名|修改檔名|修改內容|
-|:-:|:-:|:-:|
-|`config.example.json`|`config.json`|依提示貼上頻道 ID|
-|`token.example.env`|`token.env`|將 Discord Bot 的 Token 放入|
+```bash
+cp config.example.json config.json
+cp token.example.env token.env
+```
+
+> 若使用 Windows 系統，請改用 `copy` 而非 `cp`
 
 > 以上兩個檔案皆屬於敏感資訊，請勿上傳至公開的 GitHub
-
-> 另外，若使用 Render 來線上跑 Discord Bot，請在 Render &rarr; Service &rarr; Environment Variables 新增 `TOKEN = <填入你的 BOT TOKEN>`
 
 ## 啟動機器人
 在 Venv 啟動的狀態下，執行以下指令（或以其他方式開啟 `main.py`）
