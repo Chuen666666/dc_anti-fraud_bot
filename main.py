@@ -2,24 +2,32 @@ import datetime
 import json
 import os
 from pathlib import Path
+from threading import Thread
 
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from flask import Flask
-from threading import Thread
+
 
 # 啟動迷你網頁，讓 Render 持續上線
 app = Flask(__name__)
+
+
 @app.route('/')
 def home():
     return "I'm alive!"
+
+
 def run():
     app.run(host='0.0.0.0', port=8080)
+
+
 def keep_alive():
     t = Thread(target=run)
     t.daemon = True
     t.start()
+
 
 # 定義 BASE_DIR
 BASE_DIR = Path(__file__).resolve().parent
@@ -55,10 +63,14 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+
 # 事件：監聽訊息
 @bot.event
 async def on_message(message: discord.Message):
     if message.author.bot:
+        return
+
+    if message.guild is None:
         return
 
     if message.channel.id == config['NO_MSG_CHANNEL']:
@@ -100,9 +112,12 @@ async def on_message(message: discord.Message):
                 .replace('<user_id>', f'<@{target.id}>')
                 .replace('<NO_MSG_CHANNEL>', f'<#{config["NO_MSG_CHANNEL"]}>')
             )
-            await notify_channel.send(formatted_msg)
+
+            if isinstance(notify_channel, discord.abc.Messageable):
+                await notify_channel.send(formatted_msg)
 
     await bot.process_commands(message)
+
 
 # 啟動 bot
 if __name__ == '__main__':
