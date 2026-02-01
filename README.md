@@ -1,5 +1,7 @@
 # Discord 防詐防炸機器人
+
 ## 基礎環境
+
 - Python（3.10+，建議使用 3.11+）
 - Discord 伺服器（具管理員或擁有者的權限）
 - Discord Bot（擁有 Token，並將它拉進 Discord 伺服器中）
@@ -8,6 +10,7 @@
 > 不會建立 Bot 的話，可以依[這條影片](https://youtu.be/equ42VBYPrc?si=_81b7t4MDZGZwqs7)來操作
 
 ## Python 虛擬環境（Venv）與套件
+
 1. 請先把本專案 clone 下來後，建立一個 Venv
 2. 使用以下指令安裝依賴
 
@@ -29,6 +32,7 @@ cp token.example.env token.env
 > 複製後，請到被複製的兩個文件中，依提示填上相應的資訊
 
 ## 啟動機器人
+
 在 Venv 啟動的狀態下，執行以下指令（或以其他方式開啟 `main.py`）
 
 ```bash
@@ -36,6 +40,7 @@ python main.py
 ```
 
 ## Render 設定
+
 若機器人跑在 Render 環境，它會自動維持上線狀態，Render 和 UptimeRobot 的設定方式如下：
 
 1. 創建一個 Web Service
