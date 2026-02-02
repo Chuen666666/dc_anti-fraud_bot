@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import time
 from pathlib import Path
 from threading import Thread
 
@@ -121,9 +122,25 @@ async def on_message(message: discord.Message) -> None:
 
 
 # 啟動 bot
+
 if __name__ == '__main__':
-    if TOKEN:
-        keep_alive()
-        bot.run(TOKEN)
-    else:
+    if not TOKEN:
         print('錯誤！TOKEN 為空')
+        raise SystemExit(1)
+
+    keep_alive()
+
+    backoff = 30
+    while True:
+        try:
+            bot.run(TOKEN)
+        except discord.HTTPException as e:
+            print(
+                f'[Startup] Discord HTTPException: {e}\n[Startup] 可能被 Cloudflare rate limit，{backoff}s 後重試…'
+            )
+            time.sleep(backoff)
+            backoff = min(backoff * 2, 15 * 60)
+        except Exception as e:
+            print(f'[Startup] Unknown error: {e}\n[Startup] {backoff}s 後重試…')
+            time.sleep(backoff)
+            backoff = min(backoff * 2, 15 * 60)
