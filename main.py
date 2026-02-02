@@ -15,15 +15,16 @@ app = Flask(__name__)
 
 
 @app.route('/')
-def home():
+def home() -> str:
     return "I'm alive!"
 
 
-def run():
-    app.run(host='0.0.0.0', port=8080)
+def run() -> None:
+    port = int(os.environ.get('PORT', '8080'))
+    app.run(host='0.0.0.0', port=port)
 
 
-def keep_alive():
+def keep_alive() -> None:
     t = Thread(target=run)
     t.daemon = True
     t.start()
@@ -66,7 +67,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 # 事件：監聽訊息
 @bot.event
-async def on_message(message: discord.Message):
+async def on_message(message: discord.Message) -> None:
     if message.author.bot:
         return
 
@@ -107,7 +108,7 @@ async def on_message(message: discord.Message):
         # 發送通知
         notify_channel = guild.get_channel(config['INFO_CHANNEL'])
         if notify_channel:
-            formatted_msg = (
+            formatted_msg: str = (
                 config['info_msg']
                 .replace('<user_id>', f'<@{target.id}>')
                 .replace('<NO_MSG_CHANNEL>', f'<#{config["NO_MSG_CHANNEL"]}>')
