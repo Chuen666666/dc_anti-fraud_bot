@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 from threading import Thread
+from typing import Any
 
 import discord
 from discord.ext import commands
@@ -10,7 +11,10 @@ from dotenv import load_dotenv
 from flask import Flask
 
 
-# 啟動迷你網頁，讓 Render 持續上線
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_TIMEOUT_MINUTES = 28 * 24 * 60
+DISCORD_MAX_TIMEOUT_MINUTES = 28 * 24 * 60
+
 app = Flask(__name__)
 
 
@@ -19,43 +23,61 @@ def home() -> str:
     return "I'm alive!"
 
 
-def run() -> None:
+def run_health_server() -> None:
     port = int(os.environ.get('PORT', '8080'))
     app.run(host='0.0.0.0', port=port)
 
 
 def keep_alive() -> None:
-    t = Thread(target=run)
-    t.daemon = True
-    t.start()
+    Thread(target=run_health_server, daemon=True).start()
 
 
-# 定義 BASE_DIR
-BASE_DIR = Path(__file__).resolve().parent
+def get_config_path() -> Path:
+    render_secret_path = Path('/etc/secrets/config.json')
 
-# 讀取 config.json
-if os.path.exists('/etc/secrets/config.json'):
-    CONFIG_PATH = Path('/etc/secrets/config.json')
-elif (BASE_DIR / 'config.json').exists():
-    CONFIG_PATH = BASE_DIR / 'config.json'
-else:
-    CONFIG_PATH = Path('config.json')
+    if render_secret_path.exists():
+        return render_secret_path
 
-try:
-    with CONFIG_PATH.open('r', encoding='utf-8') as f:
-        config = json.load(f)
-    print(f'成功讀取設定檔：{CONFIG_PATH}')
-except Exception as e:
-    print(f'讀取設定檔失敗！路徑：{CONFIG_PATH}，錯誤：{e}')
+    local_config_path = BASE_DIR / 'config.json'
+    if local_config_path.exists():
+        return local_config_path
 
-# 讀取 token.env
+    return Path('config.json')
+
+
+def load_config() -> dict[str, Any]:
+    config_path = get_config_path()
+
+    try:
+        with config_path.open(encoding='utf-8') as config_file:
+            config = json.load(config_file)
+    except FileNotFoundError as error:
+        raise RuntimeError(f'找不到設定檔: {config_path}') from error
+    except json.JSONDecodeError as error:
+        raise RuntimeError(f'設定檔不是合法 JSON: {config_path}') from error
+
+    required_keys = {'INFO_CHANNEL', 'NO_MSG_CHANNEL', 'info_msg'}
+    missing_keys = required_keys - config.keys()
+    if missing_keys:
+        missing_key_list = ', '.join(sorted(missing_keys))
+        raise RuntimeError(f'設定檔缺少欄位: {missing_key_list}')
+
+    print(f'已讀取設定檔: {config_path}')
+    return config
+
+
+def get_timeout_until(config: dict[str, Any]) -> datetime.datetime:
+    timeout_minutes = int(config.get('TIMEOUT_MINUTES', DEFAULT_TIMEOUT_MINUTES))
+    timeout_minutes = min(timeout_minutes, DISCORD_MAX_TIMEOUT_MINUTES)
+    return datetime.datetime.now(datetime.UTC) + datetime.timedelta(
+        minutes=timeout_minutes
+    )
+
+
+load_dotenv(dotenv_path=BASE_DIR / 'token.env')
 TOKEN = os.getenv('TOKEN')
+config = load_config()
 
-if not TOKEN:
-    load_dotenv(dotenv_path=BASE_DIR / 'token.env')
-    TOKEN = os.getenv('TOKEN')
-
-# 設定 intents
 intents = discord.Intents.default()
 intents.guilds = True
 intents.members = True
@@ -65,65 +87,45 @@ intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 
-# 事件：監聽訊息
 @bot.event
 async def on_message(message: discord.Message) -> None:
-    if message.author.bot:
+    if message.author.bot or message.guild is None:
         return
 
-    if message.guild is None:
+    if message.channel.id != config['NO_MSG_CHANNEL']:
+        await bot.process_commands(message)
         return
 
-    if message.channel.id == config['NO_MSG_CHANNEL']:
-        guild = message.guild
-        target = message.author
+    if not isinstance(message.author, discord.Member):
+        return
 
-        now = datetime.datetime.now(datetime.timezone.utc)
-        time_limit = now - datetime.timedelta(minutes=5)
+    member = message.author
+    reason = f'在 <#{config["NO_MSG_CHANNEL"]}> 發言, 觸發自動停權'
 
-        # 清除該使用者五分鐘內訊息
-        for channel in guild.text_channels:
-            try:
-                async for msg in channel.history(limit=None, after=time_limit):
-                    if msg.author.id == target.id:
-                        try:
-                            await msg.delete()
-                        except discord.Forbidden:
-                            print(f'[Warning] 沒有刪除 {channel.name} 的權限')
-                        except discord.HTTPException as e:
-                            print(f'[Warning] 刪除訊息失敗: {e}')
-            except discord.Forbidden:
-                print(f'[Warning] 無法讀取頻道 {channel.name}（缺權限）')
-            except discord.HTTPException as e:
-                print(f'[Warning] 讀取頻道錯誤 {channel.name}: {e}')
+    try:
+        await member.timeout(get_timeout_until(config), reason=reason)
+    except discord.Forbidden:
+        print(
+            f'[Warning] 權限不足, 無法停權 {member}。請確認機器人有「成員停權」權限且身分組高於目標。'
+        )
+        return
+    except discord.HTTPException as error:
+        print(f'[Warning] Discord API 停權失敗: {error}')
+        return
 
-        # 踢出使用者
-        try:
-            await guild.kick(target, reason='於禁言頻道傳送訊息')
-        except discord.Forbidden:
-            print('權限不足無法踢出使用者')
-        except discord.HTTPException:
-            print('Discord API 錯誤')
-
-        # 發送通知
-        notify_channel = guild.get_channel(config['INFO_CHANNEL'])
-        if notify_channel:
-            formatted_msg: str = (
-                config['info_msg']
-                .replace('<user_id>', f'<@{target.id}>')
-                .replace('<NO_MSG_CHANNEL>', f'<#{config["NO_MSG_CHANNEL"]}>')
-            )
-
-            if isinstance(notify_channel, discord.abc.Messageable):
-                await notify_channel.send(formatted_msg)
-
-    await bot.process_commands(message)
+    notify_channel = message.guild.get_channel(config['INFO_CHANNEL'])
+    if isinstance(notify_channel, discord.abc.Messageable):
+        formatted_msg = (
+            config['info_msg']
+            .replace('<user_id>', f'<@{member.id}>')
+            .replace('<NO_MSG_CHANNEL>', f'<#{config["NO_MSG_CHANNEL"]}>')
+        )
+        await notify_channel.send(formatted_msg)
 
 
-# 啟動 bot
 if __name__ == '__main__':
-    if TOKEN:
-        keep_alive()
-        bot.run(TOKEN)
-    else:
-        print('錯誤！TOKEN 為空')
+    if not TOKEN:
+        raise RuntimeError('找不到 TOKEN。請設定環境變數 TOKEN, 或建立 token.env。')
+
+    keep_alive()
+    bot.run(TOKEN)

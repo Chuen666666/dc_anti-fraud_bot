@@ -1,57 +1,92 @@
-# Discord 防詐防炸機器人
+# Discord Anti-Fraud Bot
 
-## 基礎環境
+偵測使用者是否在指定的「禁止發言」頻道發言。一旦觸發，機器人會直接對該成員套用 Discord timeout 停權，不再逐一掃描每個頻道刪訊息。
 
-- Python（3.10+，建議使用 3.11+）
-- Discord 伺服器（具管理員或擁有者的權限）
-- Discord Bot（擁有 Token，並將它拉進 Discord 伺服器中）
-- （可選）Ruff
+## Requirements
 
-> 不會建立 Bot 的話，可以依[這條影片](https://youtu.be/equ42VBYPrc?si=_81b7t4MDZGZwqs7)來操作
+- Python 3.13
+- Node.js 24 LTS（僅供本機工具鏈標示；此專案目前沒有 Node app）
+- Discord Bot Token
+- Bot 需要以下 Discord 權限：
+  - View Channels
+  - Read Message History
+  - Send Messages
+  - Moderate Members
 
-## Python 虛擬環境（Venv）與套件
+Bot 的身分組必須高於要停權的成員，否則 Discord API 會拒絕 timeout。
 
-1. 請先把本專案 clone 下來後，建立一個 Venv
-2. 使用以下指令安裝依賴
+## Local Setup
 
 ```bash
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
+copy config.example.json config.json
+copy token.example.env token.env
 ```
 
-## 從範例檔建立必要檔案
+編輯 `config.json`：
 
-```bash
-cp config.example.json config.json
-cp token.example.env token.env
+```json
+{
+  "INFO_CHANNEL": 123456789012345678,
+  "NO_MSG_CHANNEL": 123456789012345678,
+  "TIMEOUT_MINUTES": 40320,
+  "info_msg": "偵測到 <user_id> 在 <NO_MSG_CHANNEL> 發言，已自動停權。"
+}
 ```
 
-> 若使用 Windows 系統，請改用 `copy` 而非 `cp`
+- `INFO_CHANNEL`: 發送通知的頻道 ID
+- `NO_MSG_CHANNEL`: 禁止發言的頻道 ID
+- `TIMEOUT_MINUTES`: 停權分鐘數。Discord timeout 上限是 28 天，所以最大有效值是 `40320`
+- `info_msg`: 通知訊息，可使用 `<user_id>` 和 `<NO_MSG_CHANNEL>` 佔位符
 
-> 以上兩個檔案皆屬於敏感資訊，請勿上傳至公開的 GitHub
+編輯 `token.env`：
 
-> 複製後，請到被複製的兩個文件中，依提示填上相應的資訊
+```env
+TOKEN=your_discord_bot_token
+```
 
-## 啟動機器人
-
-在 Venv 啟動的狀態下，執行以下指令（或以其他方式開啟 `main.py`）
+啟動：
 
 ```bash
 python main.py
 ```
 
-## Render 設定
+## Render Deploy
 
-若機器人跑在 Render 環境，它會自動維持上線狀態，Render 和 UptimeRobot 的設定方式如下：
+建立 Render Web Service，設定：
 
-1. 創建一個 Web Service
-2. 選擇機器人的 GitHub Repo（可先 Fork 此 Repo）
-3. 填入以下設定
-   - Runtime: `Python3`
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `python main.py`
-   - Environment Variables：填入名稱 `TOKEN` 以及具體的 Discord Bot Token 進去
-   - Advanced
-     - Secret Files：`Filename` 填入 `config.json`、`File Contents` 填入該 JSON 檔內容
-     - Health Check Path: `/`（預設為 `/healthz`）
-4. 最後點擊 `Deploy Web Service`
-5. 至 UptimeRobot：創建 HTTP / website monitoring 並填入 Render 中該 Bot 的網址
+- Runtime: Python 3
+- Build Command: `pip install -r requirements.txt`
+- Start Command: `python main.py`
+- Health Check Path: `/`
+
+Environment Variables:
+
+- `TOKEN`: Discord Bot Token
+
+Secret Files:
+
+- Filename: `config.json`
+- File Contents: 填入和 `config.example.json` 相同格式的 JSON
+
+Render 目前使用 Python 3.13 時，這份設定可直接安裝目前的依賴版本。
+
+## Development
+
+安裝 pre-commit：
+
+```bash
+pre-commit install
+pre-commit run --all-files
+```
+
+目前設定使用：
+
+- `discord.py>=2.7.1`
+- `Flask>=3.1.3`
+- `python-dotenv>=1.2.2`
+- `pre-commit>=4.6.0`
+- `ruff>=0.15.16`
+- Ruff target version: Python 3.13
