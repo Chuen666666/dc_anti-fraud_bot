@@ -71,6 +71,21 @@ def validate_optional_notification(
         raise RuntimeError(f'{server_name}.info_msg 必須是非空字串')
 
 
+def validate_whitelist(server_config: dict[str, Any], server_name: str) -> None:
+    whitelist_role_ids = server_config.get('WHITELIST_ROLE_IDS', [])
+
+    if not isinstance(whitelist_role_ids, list):
+        raise RuntimeError(f'{server_name}.WHITELIST_ROLE_IDS 必須是陣列')
+
+    for role_id in whitelist_role_ids:
+        try:
+            int(role_id)
+        except (TypeError, ValueError) as error:
+            raise RuntimeError(
+                f'{server_name}.WHITELIST_ROLE_IDS 只能包含 Discord 身分組 ID 數字'
+            ) from error
+
+
 def validate_server_config(server_config: dict[str, Any], server_name: str) -> None:
     missing_keys = REQUIRED_SERVER_CONFIG_KEYS - server_config.keys()
     if missing_keys:
@@ -84,6 +99,7 @@ def validate_server_config(server_config: dict[str, Any], server_name: str) -> N
             raise RuntimeError(f'{server_name}.{key} 必須是 Discord ID 數字') from error
 
     validate_optional_notification(server_config, server_name)
+    validate_whitelist(server_config, server_name)
 
 
 def load_config() -> dict[str, Any]:
@@ -135,6 +151,14 @@ def should_send_notification(server_config: dict[str, Any]) -> bool:
     )
 
 
+def is_whitelisted(member: discord.Member, server_config: dict[str, Any]) -> bool:
+    whitelist_role_ids = {
+        int(role_id) for role_id in server_config.get('WHITELIST_ROLE_IDS', [])
+    }
+    member_role_ids = {role.id for role in member.roles}
+    return bool(whitelist_role_ids & member_role_ids)
+
+
 load_dotenv(dotenv_path=BASE_DIR / 'token.env')
 TOKEN = os.getenv('TOKEN')
 config = load_config()
@@ -168,6 +192,10 @@ async def on_message(message: discord.Message) -> None:
         return
 
     member = message.author
+    if is_whitelisted(member, server_config):
+        print(f'[Info] {member} 在白名單中，已略過自動停權。')
+        return
+
     if member.guild_permissions.administrator:
         print(f'[Info] {member} 有 Administrator 權限，已略過自動停權。')
         return

@@ -5,6 +5,7 @@
 ## 安全限制
 
 - 有 Administrator 權限的成員不會被 Bot 自動停權，即使 Bot 身分組比對方高也一樣。
+- 擁有 `WHITELIST_ROLE_IDS` 白名單身分組的成員不會被 Bot 自動停權，也不會發通知。
 - 如果 `INFO_CHANNEL` 和 `info_msg` 都是 `null`，Bot 只會停權，不會發通知。
 - 如果 `INFO_CHANNEL` 和 `info_msg` 只有其中一個是 `null`，程式啟動時會直接報錯，避免部署後才發現設定不完整。
 
@@ -47,6 +48,9 @@ copy token.example.env token.env
     "INFO_CHANNEL": 123456789012345678,
     "NO_MSG_CHANNEL": 123456789012345678,
     "TIMEOUT_MINUTES": 40320,
+    "WHITELIST_ROLE_IDS": [
+      111111111111111111
+    ],
     "info_msg": "偵測到 <user_id> 在 <NO_MSG_CHANNEL> 發言，已自動停權。"
   },
   "server_without_notification": {
@@ -54,6 +58,7 @@ copy token.example.env token.env
     "INFO_CHANNEL": null,
     "NO_MSG_CHANNEL": 345678901234567890,
     "TIMEOUT_MINUTES": 40320,
+    "WHITELIST_ROLE_IDS": [],
     "info_msg": null
   }
 }
@@ -66,6 +71,7 @@ copy token.example.env token.env
 - `INFO_CHANNEL`：發送通知的頻道 ID；若不發通知，必須設成 `null`。
 - `NO_MSG_CHANNEL`：禁止發言的頻道 ID。
 - `TIMEOUT_MINUTES`：停權分鐘數。Discord timeout 上限是 28 天，所以最大有效值是 `40320`。
+- `WHITELIST_ROLE_IDS`：身分組白名單。填入 Discord Role ID；擁有任一白名單身分組的成員不會被自動停權。可省略或設成空陣列。
 - `info_msg`：通知訊息，可使用 `<user_id>`、`<NO_MSG_CHANNEL>`、`<guild_name>` 和 `<server_name>` 佔位符；若不發通知，必須設成 `null`。
 
 如果某個伺服器沒有填在 `config.json` 裡，Bot 會忽略該伺服器的訊息。
@@ -88,6 +94,14 @@ python main.py
 2. 右鍵伺服器名稱。
 3. 點選 Copy Server ID。
 4. 把伺服器 ID 填到 `GUILD_ID`。
+
+## 取得身分組 ID
+
+1. 在 Discord 使用者設定中開啟 Developer Mode。
+2. 到伺服器設定的 Roles / 身分組頁面。
+3. 右鍵要加入白名單的身分組。
+4. 點選 Copy Role ID。
+5. 把身分組 ID 填到 `WHITELIST_ROLE_IDS`。
 
 ## Render 部署
 

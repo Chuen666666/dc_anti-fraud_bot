@@ -4,6 +4,9 @@
     "INFO_CHANNEL": 123456789012345678,
     "NO_MSG_CHANNEL": 123456789012345678,
     "TIMEOUT_MINUTES": 40320,
+    "WHITELIST_ROLE_IDS": [
+      111111111111111111
+    ],
     "info_msg": "偵測到 <user_id> 在 <NO_MSG_CHANNEL> 發言，已自動停權。"
   },
   "server2": {
@@ -11,6 +14,7 @@
     "INFO_CHANNEL": 234567890123456789,
     "NO_MSG_CHANNEL": 234567890123456789,
     "TIMEOUT_MINUTES": 1440,
+    "WHITELIST_ROLE_IDS": [],
     "info_msg": "偵測到 <user_id> 在 <server_name> 的 <NO_MSG_CHANNEL> 發言，已自動停權。"
   },
   "server_without_notification": {
@@ -18,6 +22,7 @@
     "INFO_CHANNEL": null,
     "NO_MSG_CHANNEL": 345678901234567890,
     "TIMEOUT_MINUTES": 40320,
+    "WHITELIST_ROLE_IDS": [],
     "info_msg": null
   }
 }
