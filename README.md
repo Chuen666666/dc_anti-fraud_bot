@@ -1,6 +1,14 @@
 # Discord 防詐防炸機器人
 
-這個 Bot 會監聽指定的「禁止發言」頻道。只要使用者在該頻道發言，Bot 就會直接對該成員套用 Discord timeout 停權。
+這個 Bot 會監聽指定的「禁止發言」頻道。只要使用者在該頻道發言，Bot 就會直接對該成員套用 Discord timeout 停權，不再逐一掃描每個頻道刪訊息。
+
+同一個 Bot 可以加入多個 Discord 伺服器。`config.json` 最外層就是你自己命名的 server name，裡面再填實際 Discord `GUILD_ID` 讓程式辨識伺服器。
+
+## 安全限制
+
+- 有 Administrator 權限的成員不會被 Bot 自動停權，即使 Bot 身分組比對方高也一樣。
+- 如果 `INFO_CHANNEL` 和 `info_msg` 都是 `null`，Bot 只會停權，不會發通知。
+- 如果 `INFO_CHANNEL` 和 `info_msg` 只有其中一個是 `null`，程式啟動時會直接報錯，避免部署後才發現設定不完整。
 
 ## 環境需求
 
@@ -13,7 +21,7 @@
   - Send Messages
   - Moderate Members（成員停權）
 
-Bot 的身分組必須高於要停權的成員，否則 Discord API 會拒絕 timeout。
+Bot 的身分組必須高於要停權的非管理員成員，否則 Discord API 會拒絕 timeout。
 
 ## 本機設定
 
@@ -36,17 +44,33 @@ copy token.example.env token.env
 
 ```json
 {
-  "INFO_CHANNEL": 123456789012345678,
-  "NO_MSG_CHANNEL": 123456789012345678,
-  "TIMEOUT_MINUTES": 40320,
-  "info_msg": "偵測到 <user_id> 在 <NO_MSG_CHANNEL> 發言，已自動停權。"
+  "server1": {
+    "GUILD_ID": 111111111111111111,
+    "INFO_CHANNEL": 123456789012345678,
+    "NO_MSG_CHANNEL": 123456789012345678,
+    "TIMEOUT_MINUTES": 40320,
+    "info_msg": "偵測到 <user_id> 在 <NO_MSG_CHANNEL> 發言，已自動停權。"
+  },
+  "server_without_notification": {
+    "GUILD_ID": 333333333333333333,
+    "INFO_CHANNEL": null,
+    "NO_MSG_CHANNEL": 345678901234567890,
+    "TIMEOUT_MINUTES": 40320,
+    "info_msg": null
+  }
 }
 ```
 
-- `INFO_CHANNEL`：發送通知的頻道 ID
-- `NO_MSG_CHANNEL`：禁止發言的頻道 ID
-- `TIMEOUT_MINUTES`：停權分鐘數。Discord timeout 上限是 28 天，所以最大有效值是 `40320`
-- `info_msg`：通知訊息，可使用 `<user_id>` 和 `<NO_MSG_CHANNEL>` 佔位符
+設定說明：
+
+- `server1`、`server_without_notification`：你自己命名的 server name，可以改成任何容易辨識的名稱。
+- `GUILD_ID`：Discord 伺服器 ID，Bot 會用這個 ID 找到對應設定。
+- `INFO_CHANNEL`：發送通知的頻道 ID；若不發通知，必須設成 `null`。
+- `NO_MSG_CHANNEL`：禁止發言的頻道 ID。
+- `TIMEOUT_MINUTES`：停權分鐘數。Discord timeout 上限是 28 天，所以最大有效值是 `40320`。
+- `info_msg`：通知訊息，可使用 `<user_id>`、`<NO_MSG_CHANNEL>`、`<guild_name>` 和 `<server_name>` 佔位符；若不發通知，必須設成 `null`。
+
+如果某個伺服器沒有填在 `config.json` 裡，Bot 會忽略該伺服器的訊息。
 
 編輯 `token.env`：
 
@@ -59,6 +83,13 @@ TOKEN=your_discord_bot_token
 ```bash
 python main.py
 ```
+
+## 取得伺服器 ID
+
+1. 在 Discord 使用者設定中開啟 Developer Mode。
+2. 右鍵伺服器名稱。
+3. 點選 Copy Server ID。
+4. 把伺服器 ID 填到 `GUILD_ID`。
 
 ## Render 部署
 
@@ -78,7 +109,7 @@ Secret Files：
 - Filename：`config.json`
 - File Contents：填入和 `config.example.json` 相同格式的 JSON
 
-Render 使用 Python 3.13 時，這份設定可以直接安裝目前的依賴版本。
+多伺服器部署時，只需要在 Render 的 `config.json` Secret File 裡新增一格 server name 和對應的 `GUILD_ID` 設定，不需要新增 Render service，也不需要建立多個 Bot Token。
 
 ## 開發工具
 
