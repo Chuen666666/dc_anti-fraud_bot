@@ -1,8 +1,6 @@
 # Discord 防詐防炸機器人
 
-這個 Bot 會監聽指定的「禁止發言」頻道。只要使用者在該頻道發言，Bot 就會直接對該成員套用 Discord timeout 停權，不再逐一掃描每個頻道刪訊息。
-
-同一個 Bot 可以加入多個 Discord 伺服器。`config.json` 最外層就是你自己命名的 server name，裡面再填實際 Discord `GUILD_ID` 讓程式辨識伺服器。
+這個 Bot 會監聽指定的「禁止發言」頻道。只要使用者在該頻道發言，Bot 就會直接對該成員套用 Discord timeout 停權。
 
 ## 安全限制
 
