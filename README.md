@@ -1,12 +1,13 @@
 # Discord 防詐防炸機器人
 
-這個 Bot 會監聽指定的「禁止發言」頻道。只要使用者在該頻道發言，Bot 就會直接對該成員套用 Discord timeout 停權。
+這個 Bot 會監聽指定的「禁止發言」頻道。只要使用者在該頻道發言，Bot 就會踢出該成員，並自動刪除該成員五分鐘內在伺服器發過的訊息。
 
 ## 安全限制
 
-- 有 Administrator 權限的成員不會被 Bot 自動停權，即使 Bot 身分組比對方高也一樣。
-- 擁有 `WHITELIST_ROLE_IDS` 白名單身分組的成員不會被 Bot 自動停權，也不會發通知。
-- 如果 `INFO_CHANNEL` 和 `info_msg` 都是 `null`，Bot 只會停權，不會發通知。
+- 有 Administrator 權限的成員不會被 Bot 自動踢出，即使 Bot 身分組比對方高也一樣。
+- 擁有 `WHITELIST_ROLE_IDS` 白名單身分組的成員不會被 Bot 自動踢出，也不會發通知。
+- Bot 會固定刪除該成員五分鐘內在伺服器發過的訊息，不透過 JSON 控制。
+- 如果 `INFO_CHANNEL` 和 `info_msg` 都是 `null`，Bot 只會踢出和刪訊息，不會發通知。
 - 如果 `INFO_CHANNEL` 和 `info_msg` 只有其中一個是 `null`，程式啟動時會直接報錯，避免部署後才發現設定不完整。
 
 ## 環境需求
@@ -18,9 +19,10 @@
   - View Channels
   - Read Message History
   - Send Messages
-  - Moderate Members（成員停權）
+  - Manage Messages
+  - Kick Members
 
-Bot 的身分組必須高於要停權的非管理員成員，否則 Discord API 會拒絕 timeout。
+Bot 的身分組必須高於要踢出的非管理員成員，否則 Discord API 會拒絕 kick。若要刪除其他成員的歷史訊息，Bot 也需要 `Manage Messages` 權限。
 
 ## 本機設定
 
@@ -47,17 +49,15 @@ copy token.example.env token.env
     "GUILD_ID": 111111111111111111,
     "INFO_CHANNEL": 123456789012345678,
     "NO_MSG_CHANNEL": 123456789012345678,
-    "TIMEOUT_MINUTES": 40320,
     "WHITELIST_ROLE_IDS": [
       111111111111111111
     ],
-    "info_msg": "偵測到 <user_id> 在 <NO_MSG_CHANNEL> 發言，已自動停權。"
+    "info_msg": "被懲處人：<user_id>\n懲處原因：於 <NO_MSG_CHANNEL> 傳送訊息\n使用法原：【文字頻道條例】第一、三條\n懲處內容：踢出伺服器，並自動刪除該使用者五分鐘內傳送的所有訊息"
   },
   "server_without_notification": {
     "GUILD_ID": 333333333333333333,
     "INFO_CHANNEL": null,
     "NO_MSG_CHANNEL": 345678901234567890,
-    "TIMEOUT_MINUTES": 40320,
     "WHITELIST_ROLE_IDS": [],
     "info_msg": null
   }
@@ -70,8 +70,8 @@ copy token.example.env token.env
 - `GUILD_ID`：Discord 伺服器 ID，Bot 會用這個 ID 找到對應設定。
 - `INFO_CHANNEL`：發送通知的頻道 ID；若不發通知，必須設成 `null`。
 - `NO_MSG_CHANNEL`：禁止發言的頻道 ID。
-- `TIMEOUT_MINUTES`：停權分鐘數。Discord timeout 上限是 28 天，所以最大有效值是 `40320`。
-- `WHITELIST_ROLE_IDS`：身分組白名單。填入 Discord Role ID；擁有任一白名單身分組的成員不會被自動停權。可省略或設成空陣列。
+- 刪除歷史訊息的回溯時間固定為五分鐘，不能用 JSON 調整。
+- `WHITELIST_ROLE_IDS`：身分組白名單。填入 Discord Role ID；擁有任一白名單身分組的成員不會被自動踢出。可省略或設成空陣列。
 - `info_msg`：通知訊息，可使用 `<user_id>`、`<NO_MSG_CHANNEL>`、`<guild_name>` 和 `<server_name>` 佔位符；若不發通知，必須設成 `null`。
 
 如果某個伺服器沒有填在 `config.json` 裡，Bot 會忽略該伺服器的訊息。

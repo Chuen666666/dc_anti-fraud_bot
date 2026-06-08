@@ -12,8 +12,7 @@ from flask import Flask
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_TIMEOUT_MINUTES = 28 * 24 * 60
-DISCORD_MAX_TIMEOUT_MINUTES = 28 * 24 * 60
+DELETE_LOOKBACK_MINUTES = 5
 REQUIRED_SERVER_CONFIG_KEYS = {'GUILD_ID', 'INFO_CHANNEL', 'NO_MSG_CHANNEL', 'info_msg'}
 
 app = Flask(__name__)
@@ -136,11 +135,9 @@ def get_server_config(guild_id: int) -> tuple[str, dict[str, Any]] | None:
     return None
 
 
-def get_timeout_until(server_config: dict[str, Any]) -> datetime.datetime:
-    timeout_minutes = int(server_config.get('TIMEOUT_MINUTES', DEFAULT_TIMEOUT_MINUTES))
-    timeout_minutes = min(timeout_minutes, DISCORD_MAX_TIMEOUT_MINUTES)
-    return datetime.datetime.now(datetime.UTC) + datetime.timedelta(
-        minutes=timeout_minutes
+def get_delete_after() -> datetime.datetime:
+    return datetime.datetime.now(datetime.UTC) - datetime.timedelta(
+        minutes=DELETE_LOOKBACK_MINUTES
     )
 
 
@@ -157,6 +154,29 @@ def is_whitelisted(member: discord.Member, server_config: dict[str, Any]) -> boo
     }
     member_role_ids = {role.id for role in member.roles}
     return bool(whitelist_role_ids & member_role_ids)
+
+
+async def delete_recent_member_messages(
+    guild: discord.Guild, member: discord.Member
+) -> None:
+    delete_after = get_delete_after()
+
+    for channel in guild.text_channels:
+        try:
+            async for recent_message in channel.history(limit=None, after=delete_after):
+                if recent_message.author.id != member.id:
+                    continue
+
+                try:
+                    await recent_message.delete()
+                except discord.Forbidden:
+                    print(f'[Warning] 沒有權限刪除 {channel.name} 的訊息。')
+                except discord.HTTPException as error:
+                    print(f'[Warning] 刪除 {channel.name} 的訊息失敗：{error}')
+        except discord.Forbidden:
+            print(f'[Warning] 沒有權限讀取 {channel.name} 的訊息紀錄')
+        except discord.HTTPException as error:
+            print(f'[Warning] 讀取 {channel.name} 的訊息紀錄失敗：{error}')
 
 
 load_dotenv(dotenv_path=BASE_DIR / 'token.env')
@@ -193,24 +213,26 @@ async def on_message(message: discord.Message) -> None:
 
     member = message.author
     if is_whitelisted(member, server_config):
-        print(f'[Info] {member} 在白名單中，已略過自動停權。')
+        print(f'[Info] {member} 在白名單中，已略過自動踢出')
         return
 
     if member.guild_permissions.administrator:
-        print(f'[Info] {member} 有 Administrator 權限，已略過自動停權。')
+        print(f'[Info] {member} 有 Administrator 權限，已略過自動踢出')
         return
 
-    reason = f'在 <#{no_msg_channel_id}> 發言，觸發自動停權'
+    reason = f'在 <#{no_msg_channel_id}> 發言，觸發自動踢出'
+
+    await delete_recent_member_messages(message.guild, member)
 
     try:
-        await member.timeout(get_timeout_until(server_config), reason=reason)
+        await member.kick(reason=reason)
     except discord.Forbidden:
         print(
-            f'[Warning] 權限不足，無法停權 {member}。請確認 Bot 有 Moderate Members 權限，且身分組高於目標。'
+            f'[Warning] 權限不足，無法踢出 {member}。請確認 Bot 有 Kick Members 權限，且身分組高於目標。'
         )
         return
     except discord.HTTPException as error:
-        print(f'[Warning] Discord API 停權失敗：{error}')
+        print(f'[Warning] Discord API 踢出失敗：{error}')
         return
 
     if not should_send_notification(server_config):

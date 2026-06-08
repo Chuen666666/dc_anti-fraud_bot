@@ -3,25 +3,22 @@
     "GUILD_ID": 111111111111111111,
     "INFO_CHANNEL": 123456789012345678,
     "NO_MSG_CHANNEL": 123456789012345678,
-    "TIMEOUT_MINUTES": 40320,
     "WHITELIST_ROLE_IDS": [
       111111111111111111
     ],
-    "info_msg": "偵測到 <user_id> 在 <NO_MSG_CHANNEL> 發言，已自動停權。"
+    "info_msg": "被懲處人：<user_id>\n懲處原因：於 <NO_MSG_CHANNEL> 傳送訊息\n使用法原：【文字頻道條例】第一、三條\n懲處內容：踢出伺服器，並自動刪除該使用者五分鐘內傳送的所有訊息"
   },
   "server2": {
     "GUILD_ID": 222222222222222222,
     "INFO_CHANNEL": 234567890123456789,
     "NO_MSG_CHANNEL": 234567890123456789,
-    "TIMEOUT_MINUTES": 1440,
     "WHITELIST_ROLE_IDS": [],
-    "info_msg": "偵測到 <user_id> 在 <server_name> 的 <NO_MSG_CHANNEL> 發言，已自動停權。"
+    "info_msg": "被懲處人：<user_id>\n懲處原因：於 <NO_MSG_CHANNEL> 傳送訊息\n使用法原：【文字頻道條例】第一、三條\n懲處內容：踢出伺服器，並自動刪除該使用者五分鐘內傳送的所有訊息"
   },
   "server_without_notification": {
     "GUILD_ID": 333333333333333333,
     "INFO_CHANNEL": null,
     "NO_MSG_CHANNEL": 345678901234567890,
-    "TIMEOUT_MINUTES": 40320,
     "WHITELIST_ROLE_IDS": [],
     "info_msg": null
   }
