@@ -13,6 +13,7 @@ from flask import Flask
 
 BASE_DIR = Path(__file__).resolve().parent
 DELETE_LOOKBACK_MINUTES = 5
+DELETE_SCAN_PASSES = 2
 REQUIRED_SERVER_CONFIG_KEYS = {'GUILD_ID', 'INFO_CHANNEL', 'NO_MSG_CHANNEL', 'info_msg'}
 
 app = Flask(__name__)
@@ -161,22 +162,37 @@ async def delete_recent_member_messages(
 ) -> None:
     delete_after = get_delete_after()
 
-    for channel in guild.text_channels:
-        try:
-            async for recent_message in channel.history(limit=None, after=delete_after):
-                if recent_message.author.id != member.id:
-                    continue
+    for scan_pass in range(1, DELETE_SCAN_PASSES + 1):
+        for channel in guild.text_channels:
+            try:
+                async for recent_message in channel.history(
+                    limit=None, after=delete_after
+                ):
+                    if recent_message.author.id != member.id:
+                        continue
 
-                try:
-                    await recent_message.delete()
-                except discord.Forbidden:
-                    print(f'[Warning] 沒有權限刪除 {channel.name} 的訊息。')
-                except discord.HTTPException as error:
-                    print(f'[Warning] 刪除 {channel.name} 的訊息失敗：{error}')
-        except discord.Forbidden:
-            print(f'[Warning] 沒有權限讀取 {channel.name} 的訊息紀錄')
-        except discord.HTTPException as error:
-            print(f'[Warning] 讀取 {channel.name} 的訊息紀錄失敗：{error}')
+                    try:
+                        await recent_message.delete()
+                    except discord.Forbidden:
+                        print(
+                            f'[Warning] 第 {scan_pass} 輪沒有權限刪除 '
+                            f'{channel.name} 的訊息。'
+                        )
+                    except discord.HTTPException as error:
+                        print(
+                            f'[Warning] 第 {scan_pass} 輪刪除 '
+                            f'{channel.name} 的訊息失敗：{error}'
+                        )
+            except discord.Forbidden:
+                print(
+                    f'[Warning] 第 {scan_pass} 輪沒有權限讀取 '
+                    f'{channel.name} 的訊息紀錄'
+                )
+            except discord.HTTPException as error:
+                print(
+                    f'[Warning] 第 {scan_pass} 輪讀取 '
+                    f'{channel.name} 的訊息紀錄失敗：{error}'
+                )
 
 
 load_dotenv(dotenv_path=BASE_DIR / 'token.env')
@@ -222,8 +238,6 @@ async def on_message(message: discord.Message) -> None:
 
     reason = f'在 <#{no_msg_channel_id}> 發言，觸發自動踢出'
 
-    await delete_recent_member_messages(message.guild, member)
-
     try:
         await member.kick(reason=reason)
     except discord.Forbidden:
@@ -234,6 +248,8 @@ async def on_message(message: discord.Message) -> None:
     except discord.HTTPException as error:
         print(f'[Warning] Discord API 踢出失敗：{error}')
         return
+
+    await delete_recent_member_messages(message.guild, member)
 
     if not should_send_notification(server_config):
         return
