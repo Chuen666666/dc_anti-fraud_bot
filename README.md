@@ -125,18 +125,21 @@ Secret Files：
 
 ## 開發工具
 
-安裝並執行 pre-commit：
+安裝開發依賴並執行 pre-commit：
 
 ```bash
+pip install -r requirements-dev.txt
 pre-commit install
 pre-commit run --all-files
 ```
 
-目前依賴版本：
+目前執行期依賴版本：
 
 - `discord.py>=2.7.1`
-- `Flask>=3.1.3`
 - `python-dotenv>=1.2.2`
+
+開發依賴版本：
+
 - `pre-commit>=4.6.0`
 - `ruff>=0.15.16`
 - Ruff target version：Python 3.13

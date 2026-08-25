@@ -1,32 +1,45 @@
+import asyncio
 import datetime
 import json
 import os
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from threading import Thread
 from typing import Any
 
 import discord
-from discord.ext import commands
 from dotenv import load_dotenv
-from flask import Flask
 
 
 BASE_DIR = Path(__file__).resolve().parent
 DELETE_LOOKBACK_MINUTES = 5
 DELETE_SCAN_PASSES = 2
+DELETE_SCAN_CONCURRENCY = 2
 REQUIRED_SERVER_CONFIG_KEYS = {'GUILD_ID', 'INFO_CHANNEL', 'NO_MSG_CHANNEL', 'info_msg'}
 
-app = Flask(__name__)
 
+class HealthRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:  # noqa: N802
+        if self.path != '/':
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
 
-@app.route('/')
-def home() -> str:
-    return "I'm alive!"
+        response = b"I'm alive!"
+        self.send_response(HTTPStatus.OK)
+        self.send_header('Content-Type', 'text/plain; charset=utf-8')
+        self.send_header('Content-Length', str(len(response)))
+        self.end_headers()
+        self.wfile.write(response)
+
+    def log_message(self, _request_format: str, *_args: Any) -> None:
+        return
 
 
 def run_health_server() -> None:
     port = int(os.environ.get('PORT', '8080'))
-    app.run(host='0.0.0.0', port=port)
+    with HTTPServer(('0.0.0.0', port), HealthRequestHandler) as server:
+        server.serve_forever()
 
 
 def keep_alive() -> None:
@@ -199,13 +212,17 @@ load_dotenv(dotenv_path=BASE_DIR / 'token.env')
 TOKEN = os.getenv('TOKEN')
 config = load_config()
 
-intents = discord.Intents.default()
+intents = discord.Intents.none()
 intents.guilds = True
-intents.members = True
 intents.messages = True
-intents.message_content = True
 
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = discord.Client(
+    intents=intents,
+    member_cache_flags=discord.MemberCacheFlags.none(),
+    chunk_guilds_at_startup=False,
+    max_messages=None,
+)
+delete_scan_slots = asyncio.Semaphore(DELETE_SCAN_CONCURRENCY)
 
 
 @bot.event
@@ -215,13 +232,11 @@ async def on_message(message: discord.Message) -> None:
 
     server_config_result = get_server_config(message.guild.id)
     if server_config_result is None:
-        await bot.process_commands(message)
         return
 
     server_name, server_config = server_config_result
     no_msg_channel_id = int(server_config['NO_MSG_CHANNEL'])
     if message.channel.id != no_msg_channel_id:
-        await bot.process_commands(message)
         return
 
     if not isinstance(message.author, discord.Member):
@@ -249,7 +264,8 @@ async def on_message(message: discord.Message) -> None:
         print(f'[Warning] Discord API 踢出失敗：{error}')
         return
 
-    await delete_recent_member_messages(message.guild, member)
+    async with delete_scan_slots:
+        await delete_recent_member_messages(message.guild, member)
 
     if not should_send_notification(server_config):
         return
