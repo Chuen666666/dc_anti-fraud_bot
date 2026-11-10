@@ -12,7 +12,7 @@
 
 ## 環境需求
 
-- Python 3.13
+- Python 3.14
 - Node.js 24 LTS（僅作為本機工具鏈版本標示；此專案目前不是 Node app）
 - Discord Bot Token
 - Bot 需要以下 Discord 權限：
@@ -31,7 +31,7 @@ Bot 的身分組必須高於要踢出的非管理員成員，否則 Discord API 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r requirements.txt
+pip install --require-hashes -r requirements.txt
 ```
 
 從範例檔建立本機設定檔：
@@ -108,7 +108,7 @@ python main.py
 建立 Render Web Service，使用以下設定：
 
 - Runtime：Python 3
-- Build Command：`pip install -r requirements.txt`
+- Build Command：`pip install --require-hashes -r requirements.txt`
 - Start Command：`python main.py`
 - Health Check Path：`/`
 
@@ -128,15 +128,16 @@ Secret Files：
 安裝並執行 pre-commit：
 
 ```bash
+pip install --require-hashes -r requirements-dev.txt
 pre-commit install
 pre-commit run --all-files
 ```
 
 目前依賴版本：
 
-- `discord.py>=2.7.1`
-- `Flask>=3.1.3`
-- `python-dotenv>=1.2.2`
-- `pre-commit>=4.6.0`
-- `ruff>=0.15.16`
-- Ruff target version：Python 3.13
+- `discord.py==2.7.1`
+- `Flask==3.1.3`
+- `python-dotenv==1.2.4`
+- `pre-commit==4.7.0`
+- `ruff==0.17.4`
+- Ruff target version：Python 3.14
