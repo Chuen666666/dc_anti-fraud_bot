@@ -185,8 +185,7 @@ async def delete_recent_member_messages(
                         )
             except discord.Forbidden:
                 print(
-                    f'[Warning] 第 {scan_pass} 輪沒有權限讀取 '
-                    f'{channel.name} 的訊息紀錄'
+                    f'[Warning] 第 {scan_pass} 輪沒有權限讀取 {channel.name} 的訊息紀錄'
                 )
             except discord.HTTPException as error:
                 print(
