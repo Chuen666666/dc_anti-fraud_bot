@@ -46,9 +46,7 @@ def get_config_path() -> Path:
     return Path('config.json')
 
 
-def validate_optional_notification(
-    server_config: dict[str, Any], server_name: str
-) -> None:
+def validate_optional_notification(server_config: dict[str, Any], server_name: str) -> None:
     info_channel = server_config['INFO_CHANNEL']
     info_msg = server_config['info_msg']
 
@@ -56,16 +54,12 @@ def validate_optional_notification(
         return
 
     if info_channel is None or info_msg is None:
-        raise RuntimeError(
-            f'{server_name}.INFO_CHANNEL 和 {server_name}.info_msg 必須同時填值或同時為 null'
-        )
+        raise RuntimeError(f'{server_name}.INFO_CHANNEL 和 {server_name}.info_msg 必須同時填值或同時為 null')
 
     try:
         int(info_channel)
     except (TypeError, ValueError) as error:
-        raise RuntimeError(
-            f'{server_name}.INFO_CHANNEL 必須是 Discord ID 數字'
-        ) from error
+        raise RuntimeError(f'{server_name}.INFO_CHANNEL 必須是 Discord ID 數字') from error
 
     if not isinstance(info_msg, str) or not info_msg:
         raise RuntimeError(f'{server_name}.info_msg 必須是非空字串')
@@ -81,9 +75,7 @@ def validate_whitelist(server_config: dict[str, Any], server_name: str) -> None:
         try:
             int(role_id)
         except (TypeError, ValueError) as error:
-            raise RuntimeError(
-                f'{server_name}.WHITELIST_ROLE_IDS 只能包含 Discord 身分組 ID 數字'
-            ) from error
+            raise RuntimeError(f'{server_name}.WHITELIST_ROLE_IDS 只能包含 Discord 身分組 ID 數字') from error
 
 
 def validate_server_config(server_config: dict[str, Any], server_name: str) -> None:
@@ -137,61 +129,39 @@ def get_server_config(guild_id: int) -> tuple[str, dict[str, Any]] | None:
 
 
 def get_delete_after() -> datetime.datetime:
-    return datetime.datetime.now(datetime.UTC) - datetime.timedelta(
-        minutes=DELETE_LOOKBACK_MINUTES
-    )
+    return datetime.datetime.now(datetime.UTC) - datetime.timedelta(minutes=DELETE_LOOKBACK_MINUTES)
 
 
 def should_send_notification(server_config: dict[str, Any]) -> bool:
-    return (
-        server_config['INFO_CHANNEL'] is not None
-        and server_config['info_msg'] is not None
-    )
+    return server_config['INFO_CHANNEL'] is not None and server_config['info_msg'] is not None
 
 
 def is_whitelisted(member: discord.Member, server_config: dict[str, Any]) -> bool:
-    whitelist_role_ids = {
-        int(role_id) for role_id in server_config.get('WHITELIST_ROLE_IDS', [])
-    }
+    whitelist_role_ids = {int(role_id) for role_id in server_config.get('WHITELIST_ROLE_IDS', [])}
     member_role_ids = {role.id for role in member.roles}
     return bool(whitelist_role_ids & member_role_ids)
 
 
-async def delete_recent_member_messages(
-    guild: discord.Guild, member: discord.Member
-) -> None:
+async def delete_recent_member_messages(guild: discord.Guild, member: discord.Member) -> None:
     delete_after = get_delete_after()
 
     for scan_pass in range(1, DELETE_SCAN_PASSES + 1):
         for channel in guild.text_channels:
             try:
-                async for recent_message in channel.history(
-                    limit=None, after=delete_after
-                ):
+                async for recent_message in channel.history(limit=None, after=delete_after):
                     if recent_message.author.id != member.id:
                         continue
 
                     try:
                         await recent_message.delete()
                     except discord.Forbidden:
-                        print(
-                            f'[Warning] 第 {scan_pass} 輪沒有權限刪除 '
-                            f'{channel.name} 的訊息。'
-                        )
+                        print(f'[Warning] 第 {scan_pass} 輪沒有權限刪除 {channel.name} 的訊息。')
                     except discord.HTTPException as error:
-                        print(
-                            f'[Warning] 第 {scan_pass} 輪刪除 '
-                            f'{channel.name} 的訊息失敗：{error}'
-                        )
+                        print(f'[Warning] 第 {scan_pass} 輪刪除 {channel.name} 的訊息失敗：{error}')
             except discord.Forbidden:
-                print(
-                    f'[Warning] 第 {scan_pass} 輪沒有權限讀取 {channel.name} 的訊息紀錄'
-                )
+                print(f'[Warning] 第 {scan_pass} 輪沒有權限讀取 {channel.name} 的訊息紀錄')
             except discord.HTTPException as error:
-                print(
-                    f'[Warning] 第 {scan_pass} 輪讀取 '
-                    f'{channel.name} 的訊息紀錄失敗：{error}'
-                )
+                print(f'[Warning] 第 {scan_pass} 輪讀取 {channel.name} 的訊息紀錄失敗：{error}')
 
 
 load_dotenv(dotenv_path=BASE_DIR / 'token.env')
@@ -240,9 +210,7 @@ async def on_message(message: discord.Message) -> None:
     try:
         await member.kick(reason=reason)
     except discord.Forbidden:
-        print(
-            f'[Warning] 權限不足，無法踢出 {member}。請確認 Bot 有 Kick Members 權限，且身分組高於目標。'
-        )
+        print(f'[Warning] 權限不足，無法踢出 {member}。請確認 Bot 有 Kick Members 權限，且身分組高於目標。')
         return
     except discord.HTTPException as error:
         print(f'[Warning] Discord API 踢出失敗：{error}')
